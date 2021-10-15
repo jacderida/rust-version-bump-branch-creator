@@ -9,6 +9,7 @@ const bump = async () => {
     try {
         core.debug("Running rust auto bumper ");
         const token = core.getInput('token');
+        const manifestPaths = core.getMultilineInput('manifest-paths');
         
         if( token.length === 0 ) {
             core.setFailed("`token` must be set")
@@ -63,11 +64,23 @@ const bump = async () => {
         await exec.exec('git', ['log', '-1', '--pretty=%B'], msg_options);
         core.debug(`Commit message added was: ${commit_message}`);
 
-        // parse and update cargo.toml
-        const manifestToml = fs.readFileSync('Cargo.toml', 'utf8');
-        const manifest = toml.parse(manifestToml);
-        manifest.package.version = cargo_version;
-        fs.writeFileSync('Cargo.toml', toml.patch(manifestToml, manifest));
+        if (manifestPaths.length > 0) {
+            core.debug("The `manifest-paths` input has been used so we are using a workspace.");
+            manifestPaths.forEach(function(path) {
+                core.debug("Updating the ${path} manifest.");
+                const manifestToml = fs.readFileSync(path, 'utf8');
+                const manifest = toml.parse(manifestToml);
+                manifest.package.version = cargo_version;
+                fs.writeFileSync(path, toml.patch(manifestToml, manifest));
+            });
+        } else {
+            core.debug(
+                "The `manifest-paths` input has not been used so update the manifest at the root.");
+            const manifestToml = fs.readFileSync('Cargo.toml', 'utf8');
+            const manifest = toml.parse(manifestToml);
+            manifest.package.version = cargo_version;
+            fs.writeFileSync('Cargo.toml', toml.patch(manifestToml, manifest));
+        }
 
         // parse and update Cargo.lock (if present)
         let lockfileToml;

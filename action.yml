@@ -10,6 +10,13 @@ inputs:
     required: true
     default: main
 
+  manifest-paths:
+    description: >
+      A list of manifests to be updated with a new version.
+      This can be used if you're using a workspace repository and you need to update multiple Cargo manifests.
+      Use `|` on the field to create a list of paths that are relative to the root of the repository.
+    required: false
+
 runs:
   using: 'node12'
   main: 'index.js'
