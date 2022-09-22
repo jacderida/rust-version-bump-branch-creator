@@ -106,24 +106,28 @@ const bump = async () => {
         // push without tags, we tag once the PR has been merged (if you're doing that)
         await exec.exec(`git push "https://${botName}:${token}@github.com/${repo}" HEAD:${branchName} -f`);
 
+        const octokit = github.getOctokit(token);
+        const title = `Automated version bump + changelog for ${version}`;
+        const base = core.getInput('target_branch');
+        const head = branchName;
         let owner = repo.split('/')[0];
         let repoForOctokit = repo.split('/')[1];
 
-        core.debug(`owner: ${owner}, repo: ${repoForOctokit}`);
-        const octokit = github.getOctokit(token);
-
-        core.debug("about to create PR")
+        core.debug("Creating PR with the following parameters and values:");
+        core.debug(`owner: ${owner}`);
+        core.debug(`repo: ${repoForOctokit}`);
+        core.debug(`title: ${title}`);
+        core.debug(`head: ${branchName}`);
+        core.debug(`base: ${base}`);
 
         try{ 
-
-            let pr = await octokit.rest.pulls.create({
-              owner,
-              repo: repoForOctokit,
-              title: `Automated version bump + changelog for ${version}`,
-              head: branchName,
-              base : core.getInput('target_branch')
+          let pr = await octokit.rest.pulls.create({
+            owner,
+            repo: repoForOctokit,
+            title,
+            head,
+            base
           });
-         
         }
         catch (e )
         {
@@ -136,12 +140,9 @@ const bump = async () => {
             core.setFailed(e);
           }
         }
-    
     } catch (error) {
       core.setFailed(error.message);
     }
-
 }
-
 
 bump()
